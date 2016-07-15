@@ -36,13 +36,13 @@ describe('bitbucket', () => {
 
                 Mock.override('https://api.bitbucket.org/2.0/user', {
                     repositories: [{}],
-                    id: 'steve',
+                    uuid: '1E9C5160-E436-11E5-9897-4FCB70D5A8C7',
                     username: 'steve',
                     display_name: 'steve'
                 });
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'bitbucket',
                     clientSecret: 'secret',
@@ -69,19 +69,19 @@ describe('bitbucket', () => {
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
                             Mock.clear();
-                            expect(response.result).to.deep.equal({
+                            expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
                                 refreshToken: undefined,
                                 expiresIn: 3600,
                                 query: {},
                                 profile: {
-                                    id: 'steve',
+                                    id: '1E9C5160-E436-11E5-9897-4FCB70D5A8C7',
                                     username: 'steve',
                                     displayName: 'steve',
                                     raw: {
                                         repositories: [{}],
-                                        id: 'steve',
+                                        uuid: '1E9C5160-E436-11E5-9897-4FCB70D5A8C7',
                                         username: 'steve',
                                         display_name: 'steve'
                                     }

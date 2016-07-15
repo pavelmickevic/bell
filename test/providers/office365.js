@@ -18,7 +18,7 @@ const it = lab.it;
 const expect = Code.expect;
 
 
-describe('vk', () => {
+describe('office365', () => {
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,23 +31,21 @@ describe('vk', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.vk();
+                const custom = Bell.providers.office365();
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: [{
-                        uid: '1234567890',
-                        first_name: 'steve',
-                        last_name: 'smith'
-                    }]
+                const profile = {
+                    Id: '1234567890',
+                    DisplayName: 'steve smith',
+                    EmailAddress: 'steve_smith@domain.onmicrosoft.com'
                 };
 
-                Mock.override('https://api.vk.com/method/users.get', data);
+                Mock.override('https://outlook.office.com/api/v2.0/me', profile);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'vk',
+                    clientId: 'office365',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -56,9 +54,13 @@ describe('vk', () => {
                     method: '*',
                     path: '/login',
                     config: {
-                        auth: 'custom',
+                        auth: {
+                            strategy: 'custom'
+                        },
                         handler: function (request, reply) {
-
+                            /*if (!request.auth.isAuthenticated) {
+                                return reply('Authentication failed due to: '+request.auth.error.message);
+                            }*/
                             reply(request.auth.credentials);
                         }
                     }
@@ -75,17 +77,14 @@ describe('vk', () => {
                             expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
-                                expiresIn: 3600,
                                 refreshToken: undefined,
+                                expiresIn: 3600,
                                 query: {},
                                 profile: {
                                     id: '1234567890',
                                     displayName: 'steve smith',
-                                    name: {
-                                        first: 'steve',
-                                        last: 'smith'
-                                    },
-                                    raw: data.response[0]
+                                    email: 'steve_smith@domain.onmicrosoft.com',
+                                    raw: profile
                                 }
                             });
 

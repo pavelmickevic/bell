@@ -31,6 +31,41 @@ credentials.profile = {
 };
 ```
 
+### Auth0
+
+[Provider Documentation](https://auth0.com/docs/protocols#oauth-server-side)
+
+- `scope`: not applicable
+- `config`:
+  - `domain`: Your Auth0 domain name, such as `example.auth0.com` or `example.eu.auth0.com`
+- `auth`: [/authorize](https://auth0.com/docs/auth-api#!#get--authorize_social)
+- `token`: [/oauth/token](https://auth0.com/docs/protocols#3-getting-the-access-token)
+
+To authenticate a user with a specific identity provider directly, use `providerParams`. For example:
+
+```javascript
+providerParams: {
+    connection: 'Username-Password-Authentication'
+}
+```
+
+The default profile response will look like this:
+
+```javascript
+credentials.profile = {
+    id: profile.user_id,
+    email: profile.email,
+    displayName: profile.name,
+    name: {
+        first: profile.given_name,
+        last: profile.family_name
+    },
+    raw: profile
+};
+```
+
+Specific fields may vary depending on the identity provider used. For more information, [refer to the documentation on user profiles](https://auth0.com/docs/user-profile/normalized).
+
 ### Bitbucket
 
 [Provider Documentation](https://confluence.atlassian.com/bitbucket/oauth-on-bitbucket-238027431.html)
@@ -43,11 +78,12 @@ credentials.profile = {
 The default profile response will look like this:
 
 ```javascript
-credentials.profile = {};
-credentials.profile.id = profile.username;
-credentials.profile.username = profile.username;
-credentials.profile.displayName = profile.display_name;
-credentials.profile.raw = profile;
+credentials.profile = {
+    id: profile.uuid,
+    username: profile.username,
+    displayName: profile.display_name,
+    raw: profile
+};
 ```
 
 ### Dropbox
@@ -135,6 +171,22 @@ credentials.profile = {
     email: profile.email,
     raw: profile
 };
+```
+
+### GitLab
+
+[Provider Documentation](https://gitlab.com/help/api/oauth2.md)
+
+- `scope`: No default scope.
+- `config`:
+  - `uri`: Point to your gitlab uri. Defaults to `https://gitlab.com`.
+- `auth`: /oauth/authorize
+- `token`: /oauth/token
+
+The default profile response will look like this:
+
+```javascript
+// Defaults to gitlab response (https://gitlab.com/help/api/users.md#current-user)
 ```
 
 ### Google
@@ -295,6 +347,29 @@ credentials.profile = {
 };
 ```
 
+### Pinterest
+
+[Provider Documentation](https://developers.pinterest.com/docs/api/overview/)
+
+- `scope`: Defaults to `['read_public', 'write_public', 'read_relationships', 'write_relationships']`
+- `config`: not applicable
+- `auth`: https://api.pinterest.com/oauth/
+- `token`: https://api.pinterest.com/v1/oauth/token
+
+The default profile response will look like this:
+
+```javascript
+credentials.profile = {
+    id: profile.data.id,
+    username: profile.data.username,
+    name: {
+        first: profile.data.first_name,
+        last: profile.data.last_name
+    },
+    raw: profile
+};
+```
+
 ### Reddit
 
 [Provider Documentation](https://github.com/reddit/reddit/wiki/OAuth2)
@@ -310,6 +385,36 @@ The default profile response will look like this:
 // Defaults to reddit response
 ```
 
+### Slack
+
+[Provider Documentation](https://api.slack.com/docs/oauth)
+
+- `scope`: Defaults to `['identify']`
+- `config`:
+  - `extendedProfile`: Set to `false` if all you want is the `access_token`, without `user_id`, `user`, `raw`, etc...
+- `auth`: https://slack.com/oauth/authorize
+- `token`: https://slack.com/api/oauth.access
+
+To authenticate user in a specific team, use `providerParams`. For example:
+```javascript
+providerParams: {
+    team: 'T0XXXXXX'
+}
+```
+
+The default profile response will look like this:
+
+```javascript
+credentials.profile = {
+  scope: params.scope,
+  access_token: params.access_token,
+  user: params.user,
+  user_id: params.user_id
+}
+
+// credentials.profile.raw will contain all of the keys sent by Slack for the `auth.test` method
+```
+
 ### Twitter
 
 [Provider Documentation](https://dev.twitter.com/oauth)
@@ -317,6 +422,7 @@ The default profile response will look like this:
 - `scope`: not applicable
 - `config`:
   - `extendedProfile`: Request for more profile information
+  - `getMethod`: [Twitter API](https://dev.twitter.com/rest/public) GET method to call when `extendedProfile` is enabled. Defaults to `'users/show'`
 - `temporary`: 'https://api.twitter.com/oauth/request_token'
 - `auth`: https://api.twitter.com/oauth/authenticate
 - `token`: https://api.twitter.com/oauth/access_token
@@ -410,6 +516,70 @@ The default profile response will look like this:
 
 ```javascript
 // default profile response from Twitch
+```
+
+### Salesforce
+
+[Provider Documentation](https://developer.salesforce.com/page/Digging_Deeper_into_OAuth_2.0_on_Force.com)
+
+- `scope`: not applicable
+- `config`:
+  - `uri`: Point to your Salesforce org. Defaults to `https://login.salesforce.com`.
+- `auth`: /services/oauth2/authorize
+- `token`: /services/oauth2/token
+
+The default profile response will look like this:
+
+```javascript
+credentials.profile = {
+    id: profile.user_id,
+    username: profile.username,
+    displayName: profile.display_name,
+    firstName: profile.first_name,
+    lastName: profile.last_name,
+    email: profile.email,
+    raw: profile
+};
+```
+### Office 365
+
+[Provider Documentation](https://msdn.microsoft.com/en-us/library/azure/dn645545.aspx)
+
+
+- `scope`: Defaults to `['openid','offline_access', 'profile']`
+- `config`: not applicable
+- `auth`: https://login.microsoftonline.com/common/oauth2/v2.0/authorize
+- `token`: https://login.microsoftonline.com/common/oauth2/v2.0/token
+
+The default profile response will look like this:
+
+```javascript
+credentials.profile = {
+    id: profile.Id,
+    displayName: profile.DisplayName,
+    email: profile.EmailAddress,
+    raw: profile
+};
+```
+
+
+### WordPress
+
+[Provider Documentation](https://developer.wordpress.com/docs/api/)
+
+- `scope`: Defaults to `'global'`
+- `auth`: /oauth2/authorize
+- `token`: /oauth2/token
+
+The default profile response will look like this:
+
+```javascript
+credentials.profile = {
+    id: profile.ID,
+    username: profile.username,
+    displayName: profile.display_name,
+    raw: profile
+};
 ```
 
 ## Writing a new provider

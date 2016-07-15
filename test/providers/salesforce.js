@@ -18,7 +18,7 @@ const it = lab.it;
 const expect = Code.expect;
 
 
-describe('foursquare', () => {
+describe('salesforce', () => {
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,34 +31,28 @@ describe('foursquare', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.foursquare();
+                const custom = Bell.providers.salesforce();
+
+                expect(custom.auth).to.equal('https://login.salesforce.com/services/oauth2/authorize');
+                expect(custom.token).to.equal('https://login.salesforce.com/services/oauth2/token');
+
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: {
-                        user: {
-                            id: '1234',
-                            firstName: 'Steve',
-                            lastName: 'Smith',
-                            gender: 'male',
-                            relationship: 'self',
-                            photo: {
-                                prefix: 'https://irs0.4sqi.net/img/user/',
-                                suffix: '/1234-K0KG0PLWAG1WTOXM.jpg'
-                            },
-                            contact: {
-                                email: 'stevesmith@test.com'
-                            }
-                        }
-                    }
+                const profile = {
+                    user_id: '1234567890',
+                    username: 'steve',
+                    display_name: 'steve',
+                    first_name: 'steve',
+                    last_name: 'smith',
+                    email: 'steve@example.com'
                 };
 
-                Mock.override('https://api.foursquare.com/v2/users/self', data);
+                Mock.override('https://login.salesforce.com/id/foo/bar', profile);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'foursquare',
+                    clientId: 'salesforce',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -87,21 +81,18 @@ describe('foursquare', () => {
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,
-                                secret: 'secret',
+                                refreshToken: undefined,
                                 query: {},
                                 profile: {
-
-                                    id: '1234',
-                                    displayName: 'Steve Smith',
-                                    name: {
-                                        first: 'Steve',
-                                        last: 'Smith'
-                                    },
-                                    email: data.response.user.contact.email,
-                                    raw: data.response.user
+                                    id: '1234567890',
+                                    username: 'steve',
+                                    displayName: 'steve',
+                                    firstName: 'steve',
+                                    lastName: 'smith',
+                                    email: 'steve@example.com',
+                                    raw: profile
                                 }
                             });
-
                             mock.stop(done);
                         });
                     });
@@ -110,7 +101,7 @@ describe('foursquare', () => {
         });
     });
 
-    it('authenticates with mock when user has no email set', { parallel: false }, (done) => {
+    it('authenticates with mock and custom uri', { parallel: false }, (done) => {
 
         const mock = new Mock.V2();
         mock.start((provider) => {
@@ -121,34 +112,28 @@ describe('foursquare', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.foursquare();
+                const custom = Bell.providers.salesforce({ uri: 'http://example.com' });
+
+                expect(custom.auth).to.equal('http://example.com/services/oauth2/authorize');
+                expect(custom.token).to.equal('http://example.com/services/oauth2/token');
+
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: {
-                        user: {
-                            id: '1234',
-                            firstName: 'Steve',
-                            lastName: 'Smith',
-                            gender: 'male',
-                            relationship: 'self',
-                            photo: {
-                                prefix: 'https://irs0.4sqi.net/img/user/',
-                                suffix: '/1234-K0KG0PLWAG1WTOXM.jpg'
-                            },
-                            contact: {
-                                facebook: 'http://facebook.com/stevesmith.test'
-                            }
-                        }
-                    }
+                const profile = {
+                    user_id: '1234567890',
+                    username: 'steve',
+                    display_name: 'steve',
+                    first_name: 'steve',
+                    last_name: 'smith',
+                    email: 'steve@example.com'
                 };
 
-                Mock.override('https://api.foursquare.com/v2/users/self', data);
+                Mock.override('https://login.salesforce.com/id/foo/bar', profile);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'foursquare',
+                    clientId: 'salesforce',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -161,7 +146,6 @@ describe('foursquare', () => {
                         handler: function (request, reply) {
 
                             reply(request.auth.credentials);
-
                         }
                     }
                 });
@@ -178,21 +162,18 @@ describe('foursquare', () => {
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,
-                                secret: 'secret',
+                                refreshToken: undefined,
                                 query: {},
                                 profile: {
-
-                                    id: '1234',
-                                    displayName: 'Steve Smith',
-                                    name: {
-                                        first: 'Steve',
-                                        last: 'Smith'
-                                    },
-                                    email: undefined,
-                                    raw: data.response.user
+                                    id: '1234567890',
+                                    username: 'steve',
+                                    displayName: 'steve',
+                                    firstName: 'steve',
+                                    lastName: 'smith',
+                                    email: 'steve@example.com',
+                                    raw: profile
                                 }
                             });
-
                             mock.stop(done);
                         });
                     });

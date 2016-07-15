@@ -18,7 +18,7 @@ const it = lab.it;
 const expect = Code.expect;
 
 
-describe('vk', () => {
+describe('wordpress', () => {
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,23 +31,22 @@ describe('vk', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.vk();
+                const custom = Bell.providers.wordpress();
+
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: [{
-                        uid: '1234567890',
-                        first_name: 'steve',
-                        last_name: 'smith'
-                    }]
-                };
-
-                Mock.override('https://api.vk.com/method/users.get', data);
+                Mock.override('https://public-api.wordpress.com/rest/v1.1/me', {
+                    ID: 12345678,
+                    language: 'en',
+                    token_scope: ['global'],
+                    username: 'steve',
+                    display_name: 'steve'
+                });
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'vk',
+                    clientId: 'wordpress',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -75,17 +74,20 @@ describe('vk', () => {
                             expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
-                                expiresIn: 3600,
                                 refreshToken: undefined,
+                                expiresIn: 3600,
                                 query: {},
                                 profile: {
-                                    id: '1234567890',
-                                    displayName: 'steve smith',
-                                    name: {
-                                        first: 'steve',
-                                        last: 'smith'
-                                    },
-                                    raw: data.response[0]
+                                    id: 12345678,
+                                    username: 'steve',
+                                    displayName: 'steve',
+                                    raw: {
+                                        ID: 12345678,
+                                        language: 'en',
+                                        token_scope: ['global'],
+                                        username: 'steve',
+                                        display_name: 'steve'
+                                    }
                                 }
                             });
 

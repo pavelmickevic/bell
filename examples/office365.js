@@ -8,23 +8,26 @@ const Bell = require('../');
 
 
 const server = new Hapi.Server();
-server.connection({ host: 'localhost', port: 3456 });
+server.connection({ host: 'localhost', port: 4567 });
 
 server.register(Bell, (err) => {
 
     Hoek.assert(!err, err);
-    server.auth.strategy('facebook', 'bell', {
-        provider: 'facebook',
-        password: 'cookie_encryption_password_secure',
-        isSecure: false,
-        // You'll need to go to https://developers.facebook.com/ and set up a
-        // Website application to get started
-        // Once you create your app, fill out Settings and set the App Domains
-        // Under Settings >> Advanced, set the Valid OAuth redirect URIs to include http://<yourdomain.com>/bell/door
-        // and enable Client OAuth Login
+
+    server.auth.strategy('office', 'bell', {
+        provider: 'office365',
         clientId: '',
         clientSecret: '',
-        location: server.info.uri
+        providerParams: {
+            response_type: 'code'
+        },
+        scope: ['openid','offline_access', 'profile']
+        /**
+         *You'll need an Office 365 account to set up an application and get a clientID and ClientSecret
+         *This is a helpful tutorial for the whole process: https://dev.outlook.com/restapi/tutorial/node
+         *Once you have an account, you can set up your app and generate an ID and Secret here:
+         *https://apps.dev.microsoft.com/
+         **/
     });
 
     server.route({
@@ -32,7 +35,7 @@ server.register(Bell, (err) => {
         path: '/bell/door',
         config: {
             auth: {
-                strategy: 'facebook',
+                strategy: 'office',
                 mode: 'try'
             },
             handler: function (request, reply) {

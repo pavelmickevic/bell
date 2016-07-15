@@ -6,7 +6,7 @@ Lead Maintainer: [Lois Desplat](https://github.com/ldesplat)
 
 [![Build Status](https://secure.travis-ci.org/hapijs/bell.png)](http://travis-ci.org/hapijs/bell)
 
-**bell** ships with built-in support for authentication using `Facebook`, `GitHub`, `Google`, `Instagram`, `LinkedIn`, `Twitter`, `Yahoo`, `Foursquare`, `VK`, `ArcGIS Online`, `Windows Live`, `Nest`, `Phabricator`, `BitBucket`, `Dropbox`, `Reddit`, `Tumblr` and `Twitch`. It also supports any compliant `OAuth 1.0a` and `OAuth 2.0` based login services with a simple configuration object.
+**bell** ships with built-in support for authentication using `Facebook`, `GitHub`, `Google`, `Instagram`, `LinkedIn`, `Slack`, `Twitter`, `Yahoo`, `Foursquare`, `VK`, `ArcGIS Online`, `Windows Live`, `Nest`, `Phabricator`, `BitBucket`, `Dropbox`, `Reddit`, `Tumblr`, `Twitch`, `Salesforce` and `Pinterest`. It also supports any compliant `OAuth 1.0a` and `OAuth 2.0` based login services with a simple configuration object.
 
 ## Documentation
 
@@ -34,7 +34,7 @@ server.register(require('bell'), function (err) {
     // and the OAuth client credentials.
     server.auth.strategy('twitter', 'bell', {
         provider: 'twitter',
-        password: 'cookie_encryption_password',
+        password: 'cookie_encryption_password_secure',
         clientId: 'my_twitter_client_id',
         clientSecret: 'my_twitter_client_secret',
         isSecure: false     // Terrible idea but required if not using HTTPS especially if developing locally

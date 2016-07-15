@@ -44,7 +44,7 @@ describe('github', () => {
                 Mock.override('https://api.github.com/user', profile);
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'github',
                     clientSecret: 'secret',
@@ -71,7 +71,7 @@ describe('github', () => {
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
                             Mock.clear();
-                            expect(response.result).to.deep.equal({
+                            expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,
@@ -117,7 +117,7 @@ describe('github', () => {
                 Mock.override('http://example.com/api/v3/user', profile);
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'github',
                     clientSecret: 'secret',
@@ -144,7 +144,7 @@ describe('github', () => {
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
                             Mock.clear();
-                            expect(response.result).to.deep.equal({
+                            expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,

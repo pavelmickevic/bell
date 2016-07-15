@@ -44,7 +44,7 @@ describe('meetup', () => {
                 Mock.override('https://api.meetup.com/2/member/self', profile);
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'meetup',
                     clientSecret: 'secret',
@@ -71,7 +71,7 @@ describe('meetup', () => {
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
                             Mock.clear();
-                            expect(response.result).to.deep.equal({
+                            expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,

@@ -45,7 +45,7 @@ describe('yahoo', () => {
                 Mock.override('https://social.yahooapis.com/v1/user/', profile);
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'yahoo',
                     clientSecret: 'secret',
@@ -72,7 +72,7 @@ describe('yahoo', () => {
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
                             Mock.clear();
-                            expect(response.result).to.deep.equal({
+                            expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: 'final',
                                 secret: 'secret',

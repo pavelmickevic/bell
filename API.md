@@ -26,7 +26,7 @@ server.register(require('bell'), function (err) {
     // and the OAuth client credentials.
     server.auth.strategy('twitter', 'bell', {
         provider: 'twitter',
-        password: 'cookie_encryption_password',
+        password: 'cookie_encryption_password_secure',
         clientId: 'my_twitter_client_id',
         clientSecret: 'my_twitter_client_secret',
         isSecure: false     // Terrible idea but required if not using HTTPS especially if developing locally
@@ -65,11 +65,14 @@ server.register(require('bell'), function (err) {
 ### Options
 
 The `server.auth.strategy()` method requires the following strategy options:
-- `provider` - the name of the third-party provider (`'bitbucket'`, `'dropbox'`, `'facebook'`, `'foursquare'`, `'github'`, `'google'`, `'instagram'`, `'linkedin'`, `'live'`, `'twitter'`, `'vk'`, `'arcgisonline'`, `'yahoo'`, `'nest'`, `'phabricator'`)
+- `provider` - the name of the third-party provider (`'auth0'`, `'bitbucket'`, `'dropbox'`, `'facebook'`, `'foursquare'`, `'github'`, `'google'`, `'instagram'`, `'linkedin'`, `'live'`, `'twitter'`, `'vk'`, `'arcgisonline'`, `'yahoo'`, `'nest'`, `'phabricator'`, `'office365'`, `'pinterest'`)
   or an object containing a custom provider with the following:
     - `protocol` - the authorization protocol used. Must be one of:
         - `'oauth'` - OAuth 1.0a
         - `'oauth2'` - OAuth 2.0
+    - `signatureMethod` - the OAuth signature method (OAuth 1.0a only). Must be one of:
+        - `'HMAC-SHA1'` - default
+        - `'RSA-SHA1'` - in that case, the `clientSecret` is your RSA private key
     - `temporary` - the temporary credentials (request token) endpoint (OAuth 1.0a only).
     - `useParamsAuth` - boolean that determines if OAuth client id and client secret will be sent as parameters as opposed to an Authorization header (OAuth 2.0 only). Defaults to `false`.
     - `auth` - the authorization endpoint URI.
@@ -115,13 +118,15 @@ Each strategy accepts the following optional settings:
 - `allowRuntimeProviderParams` - allows passing query parameters from a **bell** protected endpoint to the auth request. It will merge the query params you pass along with the providerParams and any other predefined ones. Be aware that this will override predefined query parameters! Default to `false`.
 - `scope` - Each built-in vendor comes with the required scope for basic profile information. Use `scope` to specify a different scope
   as required by your application. Consult the provider for their specific supported scopes.
-- `config` - a configuration object used to customize the provider settings. The built-in `'twitter'` provider accepts the `extendedProfile`
+- `skipProfile` - skips obtaining a user profile from the provider. Useful if you need specific `scope`s, but not the user profile. Defaults to `false`.
+- `config` - a configuration object used to customize the provider settings. The built-in `'twitter'` provider accepts the `extendedProfile` & `getMethod` options.
   option which allows disabling the extra profile request when the provider returns the user information in the callback (defaults to `true`).
   The built-in `'github'` and `'phabricator'` providers accept the `uri` option which allows pointing to a private enterprise installation
   (e.g. `'https://vpn.example.com'`). See [Providers documentation](Providers.md) for more information.
 - `profileParams` - an object of key-value pairs that specify additional URL query parameters to send with the profile request to the provider.
    The built-in `facebook` provider, for example, could have `fields` specified to determine the fields returned from the user's graph, which would
    then be available to you in the `auth.credentials.profile.raw` object.
+- `runtimeStateCallback` - allows passing additional OAuth state from initial request. This must be a function returning a string, which will be appended to the **bell** internal `state` parameter for OAuth code flow.
 
 ### Advanced Usage
 

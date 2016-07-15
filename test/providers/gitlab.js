@@ -18,7 +18,7 @@ const it = lab.it;
 const expect = Code.expect;
 
 
-describe('foursquare', () => {
+describe('gitlab', () => {
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,34 +31,23 @@ describe('foursquare', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.foursquare();
+                const custom = Bell.providers.gitlab();
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: {
-                        user: {
-                            id: '1234',
-                            firstName: 'Steve',
-                            lastName: 'Smith',
-                            gender: 'male',
-                            relationship: 'self',
-                            photo: {
-                                prefix: 'https://irs0.4sqi.net/img/user/',
-                                suffix: '/1234-K0KG0PLWAG1WTOXM.jpg'
-                            },
-                            contact: {
-                                email: 'stevesmith@test.com'
-                            }
-                        }
-                    }
+                const profile = {
+                    id: '1234567890',
+                    username: 'steve',
+                    name: 'steve',
+                    email: 'steve@example.com',
+                    state: 'active'
                 };
 
-                Mock.override('https://api.foursquare.com/v2/users/self', data);
+                Mock.override('https://gitlab.com/api/v3/user', profile);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'foursquare',
+                    clientId: 'gitlab',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -87,21 +76,10 @@ describe('foursquare', () => {
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,
-                                secret: 'secret',
+                                refreshToken: undefined,
                                 query: {},
-                                profile: {
-
-                                    id: '1234',
-                                    displayName: 'Steve Smith',
-                                    name: {
-                                        first: 'Steve',
-                                        last: 'Smith'
-                                    },
-                                    email: data.response.user.contact.email,
-                                    raw: data.response.user
-                                }
+                                profile: profile
                             });
-
                             mock.stop(done);
                         });
                     });
@@ -110,7 +88,7 @@ describe('foursquare', () => {
         });
     });
 
-    it('authenticates with mock when user has no email set', { parallel: false }, (done) => {
+    it('authenticates with mock and custom uri', { parallel: false }, (done) => {
 
         const mock = new Mock.V2();
         mock.start((provider) => {
@@ -121,34 +99,23 @@ describe('foursquare', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.foursquare();
+                const custom = Bell.providers.gitlab({ uri: 'http://example.com' });
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: {
-                        user: {
-                            id: '1234',
-                            firstName: 'Steve',
-                            lastName: 'Smith',
-                            gender: 'male',
-                            relationship: 'self',
-                            photo: {
-                                prefix: 'https://irs0.4sqi.net/img/user/',
-                                suffix: '/1234-K0KG0PLWAG1WTOXM.jpg'
-                            },
-                            contact: {
-                                facebook: 'http://facebook.com/stevesmith.test'
-                            }
-                        }
-                    }
+                const profile = {
+                    id: '1234567890',
+                    username: 'steve',
+                    name: 'steve',
+                    email: 'steve@example.com',
+                    state: 'active'
                 };
 
-                Mock.override('https://api.foursquare.com/v2/users/self', data);
+                Mock.override('http://example.com/api/v3/user', profile);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'foursquare',
+                    clientId: 'gitlab',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -161,7 +128,6 @@ describe('foursquare', () => {
                         handler: function (request, reply) {
 
                             reply(request.auth.credentials);
-
                         }
                     }
                 });
@@ -178,19 +144,9 @@ describe('foursquare', () => {
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,
-                                secret: 'secret',
+                                refreshToken: undefined,
                                 query: {},
-                                profile: {
-
-                                    id: '1234',
-                                    displayName: 'Steve Smith',
-                                    name: {
-                                        first: 'Steve',
-                                        last: 'Smith'
-                                    },
-                                    email: undefined,
-                                    raw: data.response.user
-                                }
+                                profile: profile
                             });
 
                             mock.stop(done);

@@ -18,7 +18,25 @@ const it = lab.it;
 const expect = Code.expect;
 
 
-describe('vk', () => {
+describe('auth0', () => {
+
+    it('fails with no domain', { parallel: false }, (done) => {
+
+        const mock = new Mock.V2();
+        mock.start((provider) => {
+
+            const server = new Hapi.Server();
+            server.connection({ host: 'localhost', port: 80 });
+            server.register(Bell, (err) => {
+
+                expect(err).to.not.exist();
+
+                expect(Bell.providers.auth0).to.throw(Error);
+
+                mock.stop(done);
+            });
+        });
+    });
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,23 +49,26 @@ describe('vk', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.vk();
+                const custom = Bell.providers.auth0({ domain: 'example.auth0.com' });
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: [{
-                        uid: '1234567890',
-                        first_name: 'steve',
-                        last_name: 'smith'
-                    }]
+                const profile = {
+                    user_id: 'auth0|1234567890',
+                    name: 'steve smith',
+                    given_name: 'steve',
+                    family_name: 'smith',
+                    email: 'steve@example.com'
                 };
 
-                Mock.override('https://api.vk.com/method/users.get', data);
+                Mock.override('https://example.auth0.com/userinfo', profile);
 
                 server.auth.strategy('custom', 'bell', {
+                    config: {
+                        domain: 'example.auth0.com'
+                    },
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'vk',
+                    clientId: '123',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -79,13 +100,14 @@ describe('vk', () => {
                                 refreshToken: undefined,
                                 query: {},
                                 profile: {
-                                    id: '1234567890',
+                                    id: 'auth0|1234567890',
                                     displayName: 'steve smith',
                                     name: {
                                         first: 'steve',
                                         last: 'smith'
                                     },
-                                    raw: data.response[0]
+                                    email: 'steve@example.com',
+                                    raw: profile
                                 }
                             });
 

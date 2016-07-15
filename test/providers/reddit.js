@@ -54,7 +54,7 @@ describe('reddit', () => {
                 Mock.override('https://oauth.reddit.com/api/v1/me', profile);
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'reddit',
                     clientSecret: 'secret',
@@ -81,7 +81,7 @@ describe('reddit', () => {
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
                             Mock.clear();
-                            expect(response.result).to.deep.equal({
+                            expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
                                 expiresIn: 3600,

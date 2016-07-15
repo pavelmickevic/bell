@@ -19,6 +19,7 @@ const describe = lab.describe;
 const it = lab.it;
 const expect = Code.expect;
 
+const privateKey = require('./constants.json').privateKey;
 
 describe('Bell', () => {
 
@@ -33,7 +34,7 @@ describe('Bell', () => {
                 expect(err).to.not.exist();
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'test',
                     clientSecret: 'secret',
@@ -60,7 +61,7 @@ describe('Bell', () => {
             });
         });
 
-        it('errors on missing cookie on token step', (done) => {
+        it('attempts to perform html redirection on missing cookie on token step', (done) => {
 
             const server = new Hapi.Server();
             server.connection({ host: 'localhost', port: 80 });
@@ -69,7 +70,7 @@ describe('Bell', () => {
                 expect(err).to.not.exist();
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'test',
                     clientSecret: 'secret',
@@ -90,6 +91,43 @@ describe('Bell', () => {
 
                 server.inject('/login?oauth_token=123&oauth_verifier=123', (res) => {
 
+                    expect(res.statusCode).to.equal(200);
+                    expect(res.result).to.equal('<html><head><meta http-equiv=\"refresh\" content=\"0;URL=\'http://localhost:80/login?oauth_token=123&oauth_verifier=123&refresh=1\'\"></head><body></body></html>');
+                    done();
+                });
+            });
+        });
+
+        it('errors on missing cookie on token step (with refresh)', (done) => {
+
+            const server = new Hapi.Server();
+            server.connection({ host: 'localhost', port: 80 });
+            server.register(Bell, (err) => {
+
+                expect(err).to.not.exist();
+
+                server.auth.strategy('custom', 'bell', {
+                    password: 'cookie_encryption_password_secure',
+                    isSecure: false,
+                    clientId: 'test',
+                    clientSecret: 'secret',
+                    provider: 'twitter'
+                });
+
+                server.route({
+                    method: '*',
+                    path: '/login',
+                    config: {
+                        auth: 'custom',
+                        handler: function (request, reply) {
+
+                            reply(request.auth.credentials);
+                        }
+                    }
+                });
+
+                server.inject('/login?oauth_token=123&oauth_verifier=123&refresh=1', (res) => {
+
                     expect(res.statusCode).to.equal(500);
                     done();
                 });
@@ -105,7 +143,7 @@ describe('Bell', () => {
                 expect(err).to.not.exist();
 
                 server.auth.strategy('custom', 'bell', {
-                    password: 'password',
+                    password: 'cookie_encryption_password_secure',
                     isSecure: false,
                     clientId: 'test',
                     clientSecret: 'secret',
@@ -134,7 +172,7 @@ describe('Bell', () => {
 
         it('fails getting temporary credentials', (done) => {
 
-            const mock = new Mock.V1({ temporary: true });
+            const mock = new Mock.V1({ failTemporary: true });
             mock.start((provider) => {
 
                 const server = new Hapi.Server();
@@ -144,7 +182,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -174,7 +212,7 @@ describe('Bell', () => {
 
         it('fails getting token credentials', (done) => {
 
-            const mock = new Mock.V1({ token: true });
+            const mock = new Mock.V1({ failToken: true });
             mock.start((provider) => {
 
                 const server = new Hapi.Server();
@@ -184,7 +222,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -231,7 +269,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -272,7 +310,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -314,7 +352,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -369,7 +407,7 @@ describe('Bell', () => {
                     });
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'twitter',
                         clientSecret: 'secret',
@@ -421,7 +459,7 @@ describe('Bell', () => {
                     Mock.override('https://api.twitter.com/1.1/users/show.json', Boom.badRequest());
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'twitter',
                         clientSecret: 'secret',
@@ -461,6 +499,63 @@ describe('Bell', () => {
             });
         });
 
+        it('authenticates with mock Twitter with skip profile', { parallel: false }, (done) => {
+
+            const mock = new Mock.V1();
+            mock.start((provider) => {
+
+                const server = new Hapi.Server();
+                server.connection({ host: 'localhost', port: 80 });
+                server.register(Bell, (err) => {
+
+                    expect(err).to.not.exist();
+
+                    const custom = Bell.providers.twitter();
+                    Hoek.merge(custom, provider);
+
+                    server.auth.strategy('custom', 'bell', {
+                        password: 'cookie_encryption_password_secure',
+                        isSecure: false,
+                        clientId: 'twitter',
+                        clientSecret: 'secret',
+                        provider: custom,
+                        skipProfile: true
+                    });
+
+                    server.route({
+                        method: '*',
+                        path: '/login',
+                        config: {
+                            auth: 'custom',
+                            handler: function (request, reply) {
+
+                                reply(request.auth.credentials);
+                            }
+                        }
+                    });
+
+                    server.inject('/login', (res) => {
+
+                        const cookie = res.headers['set-cookie'][0].split(';')[0] + ';';
+                        mock.server.inject(res.headers.location, (mockRes) => {
+
+                            server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
+
+                                expect(response.result).to.equal({
+                                    provider: 'custom',
+                                    token: 'final',
+                                    secret: 'secret',
+                                    query: {}
+                                });
+
+                                mock.stop(done);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('errors on mismatching token', (done) => {
 
             const mock = new Mock.V1();
@@ -473,7 +568,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -522,7 +617,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: true,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -550,7 +645,6 @@ describe('Bell', () => {
             });
         });
 
-
         it('passes if isSecure is true when protocol is https (forced)', (done) => {
 
             const mock = new Mock.V1();
@@ -564,7 +658,7 @@ describe('Bell', () => {
 
                     server.auth.strategy('custom', 'bell', {
                         isSecure: true,
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         clientId: 'test',
                         clientSecret: 'secret',
                         provider: provider,
@@ -614,7 +708,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: true,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -664,7 +758,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         clientId: 'test',
                         clientSecret: 'secret',
                         provider: provider,
@@ -714,7 +808,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -764,7 +858,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -815,6 +909,69 @@ describe('Bell', () => {
             });
         });
 
+        it('returns raw resource response', { parallel: false }, (done) => {
+
+            const mock = new Mock.V1();
+            mock.start((provider) => {
+
+                const server = new Hapi.Server();
+                server.connection({ host: 'localhost', port: 80 });
+                server.register(Bell, (err) => {
+
+                    expect(err).to.not.exist();
+
+                    server.auth.strategy('custom', 'bell', {
+                        password: 'cookie_encryption_password_secure',
+                        isSecure: false,
+                        clientId: 'test',
+                        clientSecret: 'secret',
+                        provider: provider
+                    });
+
+                    server.route({
+                        method: '*',
+                        path: '/login',
+                        config: {
+                            auth: 'custom',
+                            handler: function (request, reply) {
+
+                                const client = new Bell.oauth.Client({
+                                    name: 'twitter',
+                                    provider: provider,
+                                    clientId: 'test',
+                                    clientSecret: 'secret'
+                                });
+
+                                const credentials = request.auth.credentials;
+                                client.resource('POST', mock.uri + '/resource', { a: 5 }, { token: credentials.token, secret: credentials.secret, raw: true }, (err, res) => {
+
+                                    expect(err).to.not.exist();
+                                    return reply(res);
+                                });
+                            }
+                        }
+                    });
+
+                    server.inject('/login?next=%2Fhome', (res) => {
+
+                        const cookie = res.headers['set-cookie'][0].split(';')[0] + ';';
+                        expect(res.headers.location).to.equal(mock.uri + '/auth?oauth_token=1');
+
+                        mock.server.inject(res.headers.location, (mockRes) => {
+
+                            expect(mockRes.headers.location).to.equal('http://localhost:80/login?oauth_token=1&oauth_verifier=123');
+
+                            server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
+
+                                expect(response.result).to.equal('{"a":"5"}');
+                                mock.stop(done);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('returns resource POST response', { parallel: false }, (done) => {
 
             const mock = new Mock.V1();
@@ -827,7 +984,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -893,7 +1050,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -934,7 +1091,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -987,7 +1144,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1040,7 +1197,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1069,6 +1226,64 @@ describe('Bell', () => {
             });
         });
 
+        it('authenticates with mock Instagram with skip profile', { parallel: false }, (done) => {
+
+            const mock = new Mock.V2();
+            mock.start((provider) => {
+
+                const server = new Hapi.Server();
+                server.connection({ host: 'localhost', port: 80 });
+                server.register(Bell, (err) => {
+
+                    expect(err).to.not.exist();
+
+                    const custom = Bell.providers.instagram();
+                    Hoek.merge(custom, provider);
+
+                    server.auth.strategy('custom', 'bell', {
+                        password: 'cookie_encryption_password_secure',
+                        isSecure: false,
+                        clientId: 'instagram',
+                        clientSecret: 'secret',
+                        provider: custom,
+                        skipProfile: true
+                    });
+
+                    server.route({
+                        method: '*',
+                        path: '/login',
+                        config: {
+                            auth: 'custom',
+                            handler: function (request, reply) {
+
+                                reply(request.auth.credentials);
+                            }
+                        }
+                    });
+
+                    server.inject('/login', (res) => {
+
+                        const cookie = res.headers['set-cookie'][0].split(';')[0] + ';';
+                        mock.server.inject(res.headers.location, (mockRes) => {
+
+                            server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
+
+                                expect(response.result).to.equal({
+                                    provider: 'custom',
+                                    token: '456',
+                                    refreshToken: undefined,
+                                    expiresIn: 3600,
+                                    query: {}
+                                });
+
+                                mock.stop(done);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('authenticates an endpoint with runtime query parameters', (done) => {
 
             const mock = new Mock.V2();
@@ -1081,7 +1296,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1111,6 +1326,148 @@ describe('Bell', () => {
             });
         });
 
+        it('allows runtime state', (done) => {
+
+            const mock = new Mock.V2();
+            mock.start((provider) => {
+
+                const server = new Hapi.Server();
+                server.connection({ host: 'localhost', port: 80 });
+                server.register(Bell, (err) => {
+
+                    expect(err).to.not.exist();
+
+                    server.auth.strategy('custom', 'bell', {
+                        password: 'cookie_encryption_password_secure',
+                        isSecure: false,
+                        clientId: 'test',
+                        clientSecret: 'secret',
+                        provider: provider,
+                        providerParams: { special: true },
+                        runtimeStateCallback: function (request) {
+
+                            return request.query.state;
+                        }
+                    });
+
+                    server.route({
+                        method: '*',
+                        path: '/login',
+                        config: {
+                            auth: 'custom',
+                            handler: function (request, reply) {
+
+                                reply(request.auth.credentials);
+                            }
+                        }
+                    });
+
+                    server.inject('/login?state=something', (res) => {
+
+                        expect(res.headers.location).to.contain(mock.uri + '/auth?special=true&client_id=test&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Flogin&state=');
+                        expect(res.headers.location).to.contain('something');
+                        mock.stop(done);
+                    });
+                });
+            });
+        });
+
+        it('allows empty or null runtime state', (done) => {
+
+            const mock = new Mock.V2();
+            mock.start((provider) => {
+
+                const server = new Hapi.Server();
+                server.connection({ host: 'localhost', port: 80 });
+                server.register(Bell, (err) => {
+
+                    expect(err).to.not.exist();
+
+                    server.auth.strategy('custom', 'bell', {
+                        password: 'cookie_encryption_password_secure',
+                        isSecure: false,
+                        clientId: 'test',
+                        clientSecret: 'secret',
+                        provider: provider,
+                        providerParams: { special: true },
+                        runtimeStateCallback: function (request) {
+
+                            return null;
+                        }
+                    });
+
+                    server.route({
+                        method: '*',
+                        path: '/login',
+                        config: {
+                            auth: 'custom',
+                            handler: function (request, reply) {
+
+                                reply(request.auth.credentials);
+                            }
+                        }
+                    });
+
+                    server.inject('/login?state=something', (res) => {
+
+                        expect(res.headers.location).to.contain(mock.uri + '/auth?special=true&client_id=test&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Flogin&state=');
+                        mock.stop(done);
+                    });
+                });
+            });
+        });
+
+        it('fails on missing state', (done) => {
+
+            const mock = new Mock.V2();
+            mock.start((provider) => {
+
+                const server = new Hapi.Server();
+                server.connection({ host: 'localhost', port: 80 });
+                server.register(Bell, (err) => {
+
+                    expect(err).to.not.exist();
+
+                    server.auth.strategy('custom', 'bell', {
+                        password: 'cookie_encryption_password_secure',
+                        isSecure: false,
+                        clientId: 'test',
+                        clientSecret: 'secret',
+                        provider: provider
+                    });
+
+                    server.route({
+                        method: '*',
+                        path: '/login',
+                        config: {
+                            auth: 'custom',
+                            handler: function (request, reply) {
+
+                                reply(request.auth.credentials);
+                            }
+                        }
+                    });
+
+                    server.inject('/login', (res) => {
+
+                        const cookie = res.headers['set-cookie'][0].split(';')[0] + ';';
+                        expect(res.headers.location).to.contain(mock.uri + '/auth?client_id=test&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A80%2Flogin&state=');
+
+                        mock.server.inject(res.headers.location, (mockRes) => {
+
+                            expect(mockRes.headers.location).to.contain('http://localhost:80/login?code=1&state=');
+
+                            server.inject({ url: 'http://localhost:80/login?code=1', headers: { cookie: cookie } }, (response) => {
+
+                                expect(response.statusCode).to.equal(500);
+                                mock.stop(done);
+                            });
+                        });
+                    });
+                });
+            });
+        });
+
         it('does not include runtime query parameters by default', (done) => {
 
             const mock = new Mock.V2();
@@ -1123,7 +1480,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1152,7 +1509,7 @@ describe('Bell', () => {
             });
         });
 
-        it('errors on missing cookie in token step', (done) => {
+        it('refreshes & errors on missing cookie in token step', (done) => {
 
             const mock = new Mock.V2();
             mock.start((provider) => {
@@ -1164,7 +1521,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1192,11 +1549,17 @@ describe('Bell', () => {
                         mock.server.inject(res.headers.location, (mockRes) => {
 
                             expect(mockRes.headers.location).to.contain('http://localhost:80/login?code=1&state=');
-
                             server.inject(mockRes.headers.location, (response) => {
 
-                                expect(response.statusCode).to.equal(500);
-                                mock.stop(done);
+                                expect(response.statusCode).to.equal(200);
+                                const newLocation = mockRes.headers.location + '&refresh=1';
+                                expect(response.payload).to.contain(newLocation);
+
+                                server.inject(newLocation, (errorResponse) => {
+
+                                    expect(errorResponse.statusCode).to.equal(500);
+                                    mock.stop(done);
+                                });
                             });
                         });
                     });
@@ -1216,7 +1579,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1244,7 +1607,7 @@ describe('Bell', () => {
 
                             expect(mockRes.headers.location).to.contain('http://localhost:80/login?code=1&state=');
 
-                            server.inject({ url: mockRes.headers.location + 'xx', headers: { cookie: cookie } }, (response) => {
+                            server.inject({ url: 'http://localhost:80/login?code=1&state=xx', headers: { cookie: cookie } }, (response) => {
 
                                 expect(response.statusCode).to.equal(500);
                                 mock.stop(done);
@@ -1272,7 +1635,7 @@ describe('Bell', () => {
                     Mock.override(provider.token, null);
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1325,7 +1688,7 @@ describe('Bell', () => {
                     Mock.override(provider.token, Boom.badRequest());
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1379,7 +1742,7 @@ describe('Bell', () => {
                     Mock.override(provider.token, '{x');
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1428,7 +1791,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: Mock.CLIENT_ID_TESTER,
                         clientSecret: Mock.CLIENT_SECRET_TESTER,
@@ -1481,7 +1844,7 @@ describe('Bell', () => {
                     Mock.override('https://graph.facebook.com/v2.3/me', null);
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1535,7 +1898,7 @@ describe('Bell', () => {
                     Mock.override('https://graph.facebook.com/v2.3/me', Boom.badRequest());
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1589,7 +1952,7 @@ describe('Bell', () => {
                     Mock.override('https://graph.facebook.com/v2.3/me', '{c');
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1638,7 +2001,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1661,7 +2024,15 @@ describe('Bell', () => {
                     server.inject('/login?error=access_denied', (res) => {
 
                         expect(res.statusCode).to.equal(500);
-                        done();
+                        server.inject('/login?error=access_denied&error_description="rejection"', (res2) => {
+
+                            expect(res2.statusCode).to.equal(500);
+                            server.inject('/login?denied="definitely"', (res3) => {
+
+                                expect(res3.statusCode).to.equal(500);
+                                done();
+                            });
+                        });
                     });
                 });
             });
@@ -1679,7 +2050,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: true,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1720,7 +2091,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: true,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1773,7 +2144,7 @@ describe('Bell', () => {
                     expect(err).to.not.exist();
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: true,
                         clientId: 'test',
                         clientSecret: 'secret',
@@ -1836,7 +2207,7 @@ describe('Bell', () => {
                     });
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1893,7 +2264,7 @@ describe('Bell', () => {
                     });
 
                     server.auth.strategy('custom', 'bell', {
-                        password: 'password',
+                        password: 'cookie_encryption_password_secure',
                         isSecure: false,
                         clientId: 'facebook',
                         clientSecret: 'secret',
@@ -1961,7 +2332,7 @@ describe('Bell', () => {
                 client._request('get', 'http://example.com/', null, { oauth_token: 'xcv' }, { secret: 'secret', desc: 'type' }, (err, payload) => {
 
                     Mock.clear();
-                    expect(err.message).to.equal('Received invalid payload from prov type endpoint: Unexpected token x');
+                    expect(err.message).to.startWith('Received invalid payload from prov type endpoint: Unexpected token x');
                     done();
                 });
             });
@@ -1974,7 +2345,7 @@ describe('Bell', () => {
                 client._request('get', 'http://example.com/', null, { oauth_token: 'xcv' }, { secret: 'secret' }, (err, payload) => {
 
                     Mock.clear();
-                    expect(err.message).to.equal('Received invalid payload from prov resource endpoint: Unexpected token x');
+                    expect(err.message).to.startWith('Received invalid payload from prov resource endpoint: Unexpected token x');
                     done();
                 });
             });
@@ -2022,6 +2393,41 @@ describe('Bell', () => {
 
                 const signature = client.signature('post', 'http://example.com/request', params, oauth, tokenSecret);
                 expect(signature).to.equal('r6/TJjbCOr97/+UU0NsvSne7s5g=');
+                done();
+            });
+
+            it('computes RSA-SHA1 signature', (done) => {
+
+                const client = new OAuth.Client({
+                    clientId: '9djdj82h48djs9d2',
+                    clientSecret: privateKey,
+                    provider: {
+                        protocol: 'oauth',
+                        auth: 'https://example.com/oauth/authorize',
+                        token: 'https://example.com/oauth/access-token',
+                        temporary: 'https://example.com/oauth/request-token',
+                        signatureMethod: 'RSA-SHA1'
+                    }
+                });
+
+                const params = {
+                    b5: '=%3D',
+                    a3: ['a', '2 q'],
+                    'c@': '',
+                    a2: 'r b',
+                    c2: ''
+                };
+
+                const oauth = {
+                    oauth_consumer_key: '9djdj82h48djs9d2',
+                    oauth_token: 'kkk9d7dh3k39sjv7',
+                    oauth_signature_method: 'RSA-SHA1',
+                    oauth_timestamp: '137131201',
+                    oauth_nonce: '7d8f3e4a'
+                };
+
+                const signature = client.signature('get', 'http://example.com/request', params, oauth, privateKey);
+                expect(signature).to.equal('mUUxSJS/cfLML3eZMlLK7eYxN36hWeBf4gGkAQbEc0bjz2GTH7YVaW2bQ+wwkHuWwxOTSLD70FJxVV4fmGIyw+/l7kt1FaJepL3Uc7IcARhUzsdT9HXRcHFjRkyDvBSssZA6LksQjGyblpYv5LXtUtVTm+IFR19ZwovFjIvNBxM=');
                 done();
             });
 

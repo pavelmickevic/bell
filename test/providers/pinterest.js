@@ -17,8 +17,7 @@ const describe = lab.describe;
 const it = lab.it;
 const expect = Code.expect;
 
-
-describe('vk', () => {
+describe('pinterest', () => {
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,32 +30,33 @@ describe('vk', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.vk();
-                Hoek.merge(custom, provider);
+                const pinterest = Bell.providers.pinterest();
+                Hoek.merge(pinterest, provider);
 
-                const data = {
-                    response: [{
-                        uid: '1234567890',
+                const profile = {
+                    data: {
+                        id: '1234567890',
+                        username: 'steve',
                         first_name: 'steve',
                         last_name: 'smith'
-                    }]
+                    }
                 };
 
-                Mock.override('https://api.vk.com/method/users.get', data);
+                Mock.override('https://api.pinterest.com/v1/me/', profile);
 
-                server.auth.strategy('custom', 'bell', {
+                server.auth.strategy('pinterest', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'vk',
+                    clientId: 'pinterest',
                     clientSecret: 'secret',
-                    provider: custom
+                    provider: pinterest
                 });
 
                 server.route({
                     method: '*',
                     path: '/login',
                     config: {
-                        auth: 'custom',
+                        auth: 'pinterest',
                         handler: function (request, reply) {
 
                             reply(request.auth.credentials);
@@ -73,19 +73,19 @@ describe('vk', () => {
 
                             Mock.clear();
                             expect(response.result).to.equal({
-                                provider: 'custom',
+                                provider: 'pinterest',
                                 token: '456',
                                 expiresIn: 3600,
                                 refreshToken: undefined,
                                 query: {},
                                 profile: {
                                     id: '1234567890',
-                                    displayName: 'steve smith',
+                                    username: 'steve',
                                     name: {
                                         first: 'steve',
                                         last: 'smith'
                                     },
-                                    raw: data.response[0]
+                                    raw: profile
                                 }
                             });
 

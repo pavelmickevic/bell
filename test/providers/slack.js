@@ -17,8 +17,7 @@ const describe = lab.describe;
 const it = lab.it;
 const expect = Code.expect;
 
-
-describe('foursquare', () => {
+describe('slack', () => {
 
     it('authenticates with mock', { parallel: false }, (done) => {
 
@@ -31,34 +30,24 @@ describe('foursquare', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.foursquare();
+                const custom = Bell.providers.slack();
                 Hoek.merge(custom, provider);
 
-                const data = {
-                    response: {
-                        user: {
-                            id: '1234',
-                            firstName: 'Steve',
-                            lastName: 'Smith',
-                            gender: 'male',
-                            relationship: 'self',
-                            photo: {
-                                prefix: 'https://irs0.4sqi.net/img/user/',
-                                suffix: '/1234-K0KG0PLWAG1WTOXM.jpg'
-                            },
-                            contact: {
-                                email: 'stevesmith@test.com'
-                            }
-                        }
-                    }
+                const profile = {
+                    ok: true,
+                    url: 'https:\/\/example.slack.com\/',
+                    team: 'Example',
+                    user: 'cal',
+                    team_id: 'T12345',
+                    user_id: 'U12345'
                 };
 
-                Mock.override('https://api.foursquare.com/v2/users/self', data);
+                Mock.override('https://slack.com/api/auth.test', profile);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'foursquare',
+                    clientId: 'slack',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -86,22 +75,17 @@ describe('foursquare', () => {
                             expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
+                                refreshToken: undefined,
                                 expiresIn: 3600,
-                                secret: 'secret',
                                 query: {},
                                 profile: {
-
-                                    id: '1234',
-                                    displayName: 'Steve Smith',
-                                    name: {
-                                        first: 'Steve',
-                                        last: 'Smith'
-                                    },
-                                    email: data.response.user.contact.email,
-                                    raw: data.response.user
+                                    access_token: '456',
+                                    scope: undefined,
+                                    user: 'cal',
+                                    user_id: 'U12345',
+                                    raw: profile
                                 }
                             });
-
                             mock.stop(done);
                         });
                     });
@@ -110,7 +94,7 @@ describe('foursquare', () => {
         });
     });
 
-    it('authenticates with mock when user has no email set', { parallel: false }, (done) => {
+    it('authenticates with mock (without extended profile)', { parallel: false }, (done) => {
 
         const mock = new Mock.V2();
         mock.start((provider) => {
@@ -121,34 +105,13 @@ describe('foursquare', () => {
 
                 expect(err).to.not.exist();
 
-                const custom = Bell.providers.foursquare();
+                const custom = Bell.providers.slack({ extendedProfile: false });
                 Hoek.merge(custom, provider);
-
-                const data = {
-                    response: {
-                        user: {
-                            id: '1234',
-                            firstName: 'Steve',
-                            lastName: 'Smith',
-                            gender: 'male',
-                            relationship: 'self',
-                            photo: {
-                                prefix: 'https://irs0.4sqi.net/img/user/',
-                                suffix: '/1234-K0KG0PLWAG1WTOXM.jpg'
-                            },
-                            contact: {
-                                facebook: 'http://facebook.com/stevesmith.test'
-                            }
-                        }
-                    }
-                };
-
-                Mock.override('https://api.foursquare.com/v2/users/self', data);
 
                 server.auth.strategy('custom', 'bell', {
                     password: 'cookie_encryption_password_secure',
                     isSecure: false,
-                    clientId: 'foursquare',
+                    clientId: 'slack',
                     clientSecret: 'secret',
                     provider: custom
                 });
@@ -161,7 +124,6 @@ describe('foursquare', () => {
                         handler: function (request, reply) {
 
                             reply(request.auth.credentials);
-
                         }
                     }
                 });
@@ -173,23 +135,15 @@ describe('foursquare', () => {
 
                         server.inject({ url: mockRes.headers.location, headers: { cookie: cookie } }, (response) => {
 
-                            Mock.clear();
                             expect(response.result).to.equal({
                                 provider: 'custom',
                                 token: '456',
+                                refreshToken: undefined,
                                 expiresIn: 3600,
-                                secret: 'secret',
                                 query: {},
                                 profile: {
-
-                                    id: '1234',
-                                    displayName: 'Steve Smith',
-                                    name: {
-                                        first: 'Steve',
-                                        last: 'Smith'
-                                    },
-                                    email: undefined,
-                                    raw: data.response.user
+                                    scope: undefined,
+                                    access_token: '456'
                                 }
                             });
 
