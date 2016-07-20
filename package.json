@@ -43,9 +43,6 @@
     "joi": "8.x.x",
     "wreck": "8.x.x"
   },
-  "peerDependencies": {
-    "hapi": "13.x.x"
-  },
   "devDependencies": {
     "hapi": "13.x.x",
     "hawk": "5.x.x",
